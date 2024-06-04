@@ -1,0 +1,11 @@
+is-dev: true
+server:
+  host: "127.0.0.1"
+  port: 8080
+database:
+  host: "127.0.0.1"
+  user: "postgres"
+  password: "some_pass"
+  db-name: "static_link"
+  port: 5432
+  ssl-mode: "disable"

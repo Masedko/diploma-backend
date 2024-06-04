@@ -1,0 +1,11 @@
+is-dev: true
+server:
+  host: "127.0.0.1"
+  port: 8080
+database:
+  host: "127.0.0.1"
+  user: "some-user"
+  password: "some-password"
+  db-name: "some-db-name"
+  port: 5432
+  ssl-mode: "some-ssl-mode"
