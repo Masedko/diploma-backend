@@ -1,4 +1,4 @@
-module go-backend
+module github.com/Masedko/go-backend
 
 go 1.22.3
 
