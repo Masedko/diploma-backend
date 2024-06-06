@@ -2,6 +2,8 @@ package config
 
 import (
 	"github.com/spf13/viper"
+
+	"github.com/Masedko/go-backend/internal/core/errors"
 )
 
 type Load struct {
@@ -24,9 +26,14 @@ type Database struct {
 	SSLMode  string `mapstructure:"ssl-mode"`
 }
 
+type Storage struct {
+	BucketNames []string `mapstructure:"bucket-names"`
+}
+
 type Config struct {
 	Server   `mapstructure:"server"`
 	Database `mapstructure:"database"`
+	Storage  `mapstructure:"storage"`
 }
 
 func LoadConfig(load Load) (*Config, error) {
@@ -37,7 +44,7 @@ func LoadConfig(load Load) (*Config, error) {
 
 	err := v.ReadInConfig()
 	if err != nil {
-		return nil, pkgerrors.Error{
+		return nil, errors.Error{
 			Err:  err,
 			Desc: "Cannot read config",
 		}
@@ -46,7 +53,7 @@ func LoadConfig(load Load) (*Config, error) {
 	var config Config
 	err = v.Unmarshal(&config)
 	if err != nil {
-		return nil, pkgerrors.Error{
+		return nil, errors.Error{
 			Err:  err,
 			Desc: "Cannot unmarshal config",
 		}

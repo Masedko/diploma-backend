@@ -3,9 +3,11 @@ package middleware
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+
+	"github.com/Masedko/go-backend/internal/core/logger"
 )
 
-func NewLoggerMiddleware(logger *logger.Logger) echo.MiddlewareFunc {
+func NewLogger(logger *logger.Logger) echo.MiddlewareFunc {
 	return middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogURI:    true,
 		LogStatus: true,

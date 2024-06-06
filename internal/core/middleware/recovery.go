@@ -6,7 +6,7 @@ import (
 	"github.com/labstack/gommon/log"
 )
 
-func NewRecoveryMiddleware() echo.MiddlewareFunc {
+func NewRecovery() echo.MiddlewareFunc {
 	return middleware.RecoverWithConfig(middleware.RecoverConfig{
 		StackSize: 1 << 10, // 1 KB
 		LogLevel:  log.ERROR,

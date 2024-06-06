@@ -9,3 +9,5 @@ database:
   db-name: "some-db-name"
   port: 5432
   ssl-mode: "some-ssl-mode"
+storage:
+  bucket-names: ["some-bucket-name"]
