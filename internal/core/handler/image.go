@@ -1,36 +1,50 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/labstack/echo/v4"
 
 	pkgerrors "github.com/Masedko/go-backend/internal/core/errors"
-	"github.com/Masedko/go-backend/internal/core/model"
-	"github.com/Masedko/go-backend/internal/core/storage"
+	"github.com/Masedko/go-backend/internal/core/model/dto"
+	"github.com/Masedko/go-backend/internal/core/service"
 )
 
-func (h *Handler) GetImages(c echo.Context) error {
-	req := &getImagesRequest{}
+type ImageHandler struct {
+	imageService *service.ImageService
+}
+
+func NewImageHandler(imageService *service.ImageService) *ImageHandler {
+	return &ImageHandler{
+		imageService: imageService,
+	}
+}
+
+func (h *ImageHandler) GetImage(c echo.Context) error {
+	req := &dto.GetImageRequest{}
 	if err := c.Bind(req); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, pkgerrors.NewError("Failed to bind request", err))
 	}
 	if err := c.Validate(req); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, pkgerrors.NewError("Failed to validate request", err))
 	}
-	images, err := h.imagesRepo.GetImages(req.Page, req.PerPage)
+	dtoImageGet, err := h.imageService.GetImageByLatLngXYZoom(req)
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, pkgerrors.NewError("Failed to get images", err))
 	}
-	return c.JSON(http.StatusCreated, getImagesResponse{
-		Images: images,
+
+	return c.JSON(http.StatusOK, dto.GetImageResponse{
+		ID:                dtoImageGet.ID,
+		DestroyedObjectID: dtoImageGet.DestroyedObjectID,
+		FileName:          dtoImageGet.FileName,
+		Path:              dtoImageGet.Path,
+		Lat:               dtoImageGet.Lat,
+		Lng:               dtoImageGet.Lng,
 	})
 }
 
-func (h *Handler) CreateImage(c echo.Context) error {
-	req := &createImageRequest{}
+func (h *ImageHandler) CreateImage(c echo.Context) error {
+	req := &dto.CreateImageRequest{}
 	if err := c.Bind(req); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, pkgerrors.NewError("Failed to bind request", err))
 	}
@@ -38,63 +52,31 @@ func (h *Handler) CreateImage(c echo.Context) error {
 	if err := c.Validate(req); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, pkgerrors.NewError("Failed to validate request", err))
 	}
-
 	file, err := c.FormFile("file")
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, pkgerrors.NewError("Failed to get file", err))
 	}
 
-	src, err := file.Open()
-	if err != nil {
-		return err
-	}
-	defer src.Close()
-
-	path, err := h.client.UploadToBucket(c.Request().Context(), storage.ImageBucket,
-		fmt.Sprintf("%f_%f/%d_%d_%d", req.Lat, req.Lng, req.X, req.Y, req.Zoom), src)
-	if err != nil {
-		return c.JSON(http.StatusUnprocessableEntity, pkgerrors.NewError("Failed to upload file", err))
-	}
-
-	err = h.imagesRepo.CreateImage(model.Image{
-		ID:                req.ID,
-		DestroyedObjectID: req.DestroyedObjectID,
-		FileName:          req.FileName,
-		Path:              path,
-		Lat:               req.Lat,
-		Lng:               req.Lng,
-		X:                 req.X,
-		Y:                 req.Y,
-		Zoom:              req.Zoom,
-		UpdatedAt:         time.Now(),
-		CreatedAt:         time.Now(),
-	})
+	err = h.imageService.CreateImage(req, file)
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, pkgerrors.NewError("Failed to create image", err))
 	}
-	return c.JSON(http.StatusCreated, createImageResponse{})
+
+	return c.JSON(http.StatusCreated, dto.CreateImageResponse{})
 }
 
-func (h *Handler) DeleteImage(c echo.Context) error {
-	req := &deleteImageRequest{}
+func (h *ImageHandler) DeleteImage(c echo.Context) error {
+	req := &dto.DeleteImageRequest{}
 	if err := c.Bind(req); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, pkgerrors.NewError("Failed to bind request", err))
 	}
 	if err := c.Validate(req); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, pkgerrors.NewError("Failed to validate request", err))
 	}
-	if req.ID != nil {
-		err := h.imagesRepo.DeleteImage(*req.ID)
-		if err != nil {
-			return c.JSON(http.StatusUnprocessableEntity, pkgerrors.NewError("Failed to delete image", err))
-		}
-	} else if req.DestroyedObjectID != nil {
-		err := h.imagesRepo.DeleteImagesByDestroyedObjectID(*req.DestroyedObjectID)
-		if err != nil {
-			return c.JSON(http.StatusUnprocessableEntity, pkgerrors.NewError("Failed to delete images", err))
-		}
-	} else {
-		return c.JSON(http.StatusBadRequest, pkgerrors.NewError("Failed to delete image", nil))
+	err := h.imageService.DeleteImage(req)
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, pkgerrors.NewError("Failed to delete image", err))
 	}
-	return c.JSON(http.StatusCreated, deleteImageResponse{})
+
+	return c.JSON(http.StatusNoContent, dto.DeleteImageResponse{})
 }

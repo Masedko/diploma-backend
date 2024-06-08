@@ -4,13 +4,8 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"strings"
 
 	"cloud.google.com/go/storage"
-)
-
-const (
-	ImageBucket = "diploma-images"
 )
 
 type Bucket struct {
@@ -19,12 +14,12 @@ type Bucket struct {
 }
 
 // NewBucket Creates Bucket that can be used to upload and download files to a single bucket
-func newBucket(c *storage.Client, bucketName string) *Bucket {
-	bkt := c.Bucket(bucketName)
+func NewBucket(c *Client, bucketName string) *Bucket {
+	bkt := c.client.Bucket(bucketName)
 	return &Bucket{bkt, bucketName}
 }
 
-func (b *Bucket) upload(ctx context.Context, fileName string, file io.Reader) (string, error) {
+func (b *Bucket) Upload(ctx context.Context, fileName string, file io.Reader) (string, error) {
 	obj := b.Object(fileName)
 	wc := obj.NewWriter(ctx)
 	if _, err := io.Copy(wc, file); err != nil {
@@ -37,12 +32,11 @@ func (b *Bucket) upload(ctx context.Context, fileName string, file io.Reader) (s
 	return fmt.Sprintf("%s/%s", b.Name, fileName), nil
 }
 
-func (b *Bucket) get(ctx context.Context, filePath string) (file io.Reader, err error) {
-	fileName := strings.TrimLeft(filePath, fmt.Sprintf("%s/", b.Name))
+func (b *Bucket) Delete(ctx context.Context, fileName string) error {
 	obj := b.Object(fileName)
-	rc, err := obj.NewReader(ctx)
+	err := obj.Delete(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create reader: %v", err)
+		return fmt.Errorf("cannot delete file: %v", err)
 	}
-	return rc, nil
+	return nil
 }

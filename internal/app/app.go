@@ -8,8 +8,10 @@ import (
 	"github.com/Masedko/go-backend/internal/core/handler"
 	"github.com/Masedko/go-backend/internal/core/logger"
 	"github.com/Masedko/go-backend/internal/core/router"
-	"github.com/Masedko/go-backend/internal/core/storage"
+	"github.com/Masedko/go-backend/internal/core/service"
 	"github.com/Masedko/go-backend/internal/data/database"
+	"github.com/Masedko/go-backend/internal/data/repository"
+	"github.com/Masedko/go-backend/internal/data/storage"
 )
 
 type App struct {
@@ -29,9 +31,6 @@ func New() *App {
 		log.FatalWithDesc(err)
 	}
 
-	r := router.New(log)
-	v1 := r.Group("/api/v1")
-
 	db, err := database.NewDB(database.Config{
 		Host:     cfg.Database.Host,
 		User:     cfg.Database.User,
@@ -44,14 +43,31 @@ func New() *App {
 	}
 	log.Info().Msg("Database connected")
 
-	s, err := storage.New(cfg.Storage.BucketNames)
+	s, err := storage.New()
 	if err != nil {
 		log.FatalWithDesc(err)
 	}
 	log.Info().Msg("Storage connected")
 
-	h := handler.New(db, s)
-	h.Register(v1)
+	if len(cfg.Storage.BucketNames) == 0 {
+		log.FatalWithDesc(pkgerrors.NewError("Bucket name is not set", nil))
+	}
+	imageBucket := storage.NewBucket(s, cfg.Storage.BucketNames[0])
+
+	r := router.New(log)
+	v1 := r.Group("/api/v1")
+
+	imageRepo := repository.NewImageRepository(db)
+	destroyedObjectRepo := repository.NewDestroyedObjectRepository(db)
+
+	imageService := service.NewImageService(imageRepo, imageBucket)
+	destroyedObjectService := service.NewDestroyedObjectService(destroyedObjectRepo)
+
+	imageHandler := handler.NewImageHandler(imageService)
+	destroyedObjectHandler := handler.NewDestroyedObjectHandler(destroyedObjectService)
+
+	imageHandler.Register(v1)
+	destroyedObjectHandler.Register(v1)
 
 	return &App{
 		Logger: log,

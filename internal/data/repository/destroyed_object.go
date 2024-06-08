@@ -1,4 +1,4 @@
-package repositories
+package repository
 
 import (
 	"github.com/google/uuid"
@@ -23,8 +23,10 @@ func (r *DestroyedObjectRepo) GetDestroyedObjects(
 	name *string,
 	objType *string,
 	region *string,
-	destructionTime *string,
-	restorationTime *string,
+	startDestructionTime *string,
+	endDestructionTime *string,
+	startRestorationTime *string,
+	endRestorationTime *string,
 ) ([]model.DestroyedObject, error) {
 	var objects []model.DestroyedObject
 	var conditions []string
@@ -57,17 +59,30 @@ func (r *DestroyedObjectRepo) GetDestroyedObjects(
 		args = append(args, *region)
 	}
 
-	if destructionTime != nil {
+	if startDestructionTime != nil {
 		argID++
-		conditions = append(conditions, "destruction_time = $"+string(rune(argID)))
-		args = append(args, *destructionTime)
+		conditions = append(conditions, "destruction_time >= $"+string(rune(argID)))
+		args = append(args, *startDestructionTime)
 	}
 
-	if restorationTime != nil {
+	if endDestructionTime != nil {
 		argID++
-		conditions = append(conditions, "restoration_time = $"+string(rune(argID)))
-		args = append(args, *restorationTime)
+		conditions = append(conditions, "destruction_time <= $"+string(rune(argID)))
+		args = append(args, *endDestructionTime)
 	}
+
+	if startRestorationTime != nil {
+		argID++
+		conditions = append(conditions, "restoration_time >= $"+string(rune(argID)))
+		args = append(args, *startRestorationTime)
+	}
+
+	if endRestorationTime != nil {
+		argID++
+		conditions = append(conditions, "restoration_time <= $"+string(rune(argID)))
+		args = append(args, *endRestorationTime)
+	}
+
 	baseQuery := `
 		SELECT 
 			id,

@@ -1,6 +1,6 @@
 module github.com/Masedko/go-backend
 
-go 1.22.3
+go 1.22.4
 
 require (
 	cloud.google.com/go/storage v1.38.0
@@ -33,6 +33,7 @@ require (
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.3 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
+	github.com/jfeliu007/goplantuml v1.6.2 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
